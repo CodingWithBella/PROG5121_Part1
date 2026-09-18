@@ -235,3 +235,157 @@ public class Prog5121Part1 {
         }
     }
 }
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.prog5121part1;
+
+import java.util.Scanner;
+import java.util.ArrayList;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+
+/**
+ *
+ * @author growwithbella
+ */
+public class Login {
+
+    private String username;
+    private String passwordHash;
+    private String phoneNumber;
+    private byte[] salt;
+
+    // Constructor
+    public Login(
+            String username,
+            String password,
+            String phoneNumber) {
+
+        this.username = username;
+        this.phoneNumber = phoneNumber;
+
+        // Generate a unique salt
+        this.salt = generateSalt();
+
+        // Hash the password
+        this.passwordHash = hashPassword(password, salt);
+    }
+    
+    // CHECK USERNAME
+
+    public boolean checkUserName() {
+
+        return username.contains("_")
+                && username.length() <= 5;
+    }
+
+    // CHECK PASSWORD COMPLEXITY
+
+    public boolean checkPasswordComplexity(String password) {
+
+        return password.length() >= 8
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*[0-9].*")
+                && password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+    }
+
+    // ==========================================
+    // CHECK CELLPHONE NUMBER
+    // ==========================================
+
+    public boolean checkCellPhoneNumber() {
+
+        return phoneNumber.matches("^\\+27[6-8][0-9]{8}$");
+    }
+
+    // GET USERNAME
+
+    public String getUsername() {
+        return username;
+    }
+
+    // LOGIN USER
+
+    public boolean loginUser(String enteredPassword) {
+
+        // Hash the entered password using
+        // the same salt used during registration
+        String enteredPasswordHash =
+                hashPassword(enteredPassword, salt);
+
+        // Compare the two hashes
+        return this.passwordHash.equals(enteredPasswordHash);
+    }
+
+    // ==========================================
+    // LOGIN STATUS
+    // ==========================================
+
+    public String returnLoginStatus(boolean status) {
+
+        if (status) {
+            return "Login successful!";
+        } else {
+            return "Username or password incorrect, please try again.";
+        }
+    }
+
+    // ==========================================
+    // HASH PASSWORD
+    // ==========================================
+
+    private String hashPassword(
+            String password,
+            byte[] salt) {
+
+        try {
+
+            MessageDigest md =
+                    MessageDigest.getInstance("SHA-256");
+
+            // Add salt to the password
+            md.update(salt);
+
+            // Hash the password
+            byte[] hash =
+                    md.digest(password.getBytes());
+
+            // Convert hash to hexadecimal
+            StringBuilder hexString =
+                    new StringBuilder();
+
+            for (byte b : hash) {
+
+                hexString.append(
+                        String.format("%02x", b));
+            }
+
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+
+            throw new RuntimeException(
+                    "Error hashing password", e);
+        }
+    }
+
+    // ==========================================
+    // GENERATE RANDOM SALT
+    // ==========================================
+
+    private byte[] generateSalt() {
+
+        SecureRandom random =
+                new SecureRandom();
+
+        byte[] salt = new byte[16];
+
+        random.nextBytes(salt);
+
+        return salt;
+    }
+}
