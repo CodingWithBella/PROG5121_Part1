@@ -1,0 +1,489 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ */
+
+package com.mycompany.prog5121part1;
+import java.util.Scanner;
+import java.util.ArrayList;
+
+
+/**
+ *
+ * @author growwithbella
+ */
+public class Prog5121Part1 {
+    
+    private static final Scanner scanner = new Scanner(System.in);
+    private static Login registeredUser = null;
+
+    public static void main(String[] args) {
+        System.out.println("PROGRAM HAS STARTED!");
+        System.out.println("\nWelcome to our Chat App 2026!");
+
+           boolean running = true;
+        while (running) {
+            System.out.println("\n===== MAIN MENU =====");
+            System.out.println("1. Register");
+            System.out.println("2. Login");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+
+            switch (readInt()) {
+                case 1:
+                    handleRegistration();
+                    break;
+                case 2:
+                    if (handleLogin()) {
+                        startQuickChat();
+                    }
+                    break;
+                case 3:
+                    running = false;
+                    System.out.println("Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid option. Please enter 1, 2 or 3.");
+            }
+        }
+    }
+
+    private static void handleRegistration() {
+        System.out.println("\n===== REGISTRATION =====");
+        System.out.print("Enter first name: ");
+        String firstName = scanner.nextLine().trim();
+        System.out.print("Enter last name: ");
+        String lastName = scanner.nextLine().trim();
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        System.out.print("Enter South African cellphone number (e.g. +27831111111): ");
+        String phone = scanner.nextLine().trim();
+
+        Login candidate = new Login(firstName, lastName, username, password, phone);
+
+        if (!candidate.checkCellPhoneNumber()) {
+            System.out.println("Cell phone number incorrectly formatted or does not contain international code.");
+            return;
+        }
+        System.out.println("Cell phone number successfully added.");
+
+        System.out.println(candidate.registerUser());
+        if (!candidate.checkUserName() || !candidate.checkPasswordComplexity()) {
+            return;
+        }
+
+        registeredUser = candidate;
+    }
+
+    private static boolean handleLogin() {
+        if (registeredUser == null) {
+            System.out.println("No user is registered yet. Please register first.");
+            return false;
+        }
+
+        System.out.println("\n===== LOGIN =====");
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        boolean success = registeredUser.loginUser(username, password);
+        System.out.println(registeredUser.returnLoginStatus(success));
+        return success;
+    }
+
+    private static void startQuickChat() {
+        System.out.println("\nWelcome to QuickChat.");
+
+        int totalAllowed = 0;
+        while (totalAllowed <= 0) {
+            System.out.print("How many messages would you like to enter? ");
+            totalAllowed = readInt();
+            if (totalAllowed <= 0) {
+                System.out.println("Please enter a whole number greater than 0.");
+            }
+        }
+
+        int entered = 0;
+        boolean chatting = true;
+
+        while (chatting) {
+            System.out.println("\n===== QUICKCHAT MENU =====");
+            System.out.println("1) Send Messages");
+            System.out.println("2) Show recently sent messages");
+            System.out.println("3) Quit");
+            System.out.print("Choose an option: ");
+
+            switch (readInt()) {
+                case 1:
+                    if (entered >= totalAllowed) {
+                        System.out.println("You have already entered all " + totalAllowed + " messages.");
+                    } else {
+                        processMessage(entered);
+                        entered++;
+                        if (entered == totalAllowed) {
+                            System.out.println("Total messages sent: " + Message.returnTotalMessages());
+                        }
+                    }
+                    break;
+                case 2:
+                    System.out.println("Coming Soon.");
+                    break;
+                case 3:
+                    System.out.println("Total messages sent: " + Message.returnTotalMessages());
+                    chatting = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Please enter 1, 2 or 3.");
+            }
+        }
+    }
+
+    private static void processMessage(int messageNumber) {
+        Message message = readMessage(messageNumber);
+        System.out.println(message.reportMessageID());
+
+        int choice = 0;
+        while (choice < 1 || choice > 3) {
+            System.out.println("\nWhat would you like to do with this message?");
+            System.out.println("1) Send Message");
+            System.out.println("2) Disregard Message");
+            System.out.println("3) Store Message to send later");
+            System.out.print("Choose an option: ");
+            choice = readInt();
+            if (choice < 1 || choice > 3) {
+                System.out.println("Please choose 1, 2 or 3.");
+            }
+        }
+
+        System.out.println(message.SentMessage(choice));
+
+        if (choice == 1) {
+            System.out.println("\n" + message.getMessageDetails());
+        } else if (choice == 2) {
+            if (scanner.nextLine().trim().equals("0")) {
+                System.out.println("Message deleted.");
+            }
+        }
+    }
+
+    private static Message readMessage(int messageNumber) {
+        String recipient;
+        while (true) {
+            System.out.print("Enter recipient cell number (e.g. +27718693002): ");
+            recipient = scanner.nextLine().trim();
+            Message probe = new Message(messageNumber, recipient, "");
+            System.out.println(probe.checkRecipientCell());
+            if (probe.isValidRecipient()) {
+                break;
+            }
+        }
+
+        while (true) {
+            System.out.print("Enter your message (max 250 characters): ");
+            String text = scanner.nextLine();
+            if (text.trim().isEmpty()) {
+                System.out.println("The message cannot be empty.");
+                continue;
+            }
+            Message candidate = new Message(messageNumber, recipient, text);
+            System.out.println(candidate.checkMessageLength());
+            if (candidate.isMessageLengthValid()) {
+                return candidate;
+            }
+        }
+    }
+    
+    // Reads a whole line and converts it, so typing letters can't crash the program
+    private static int readInt() {
+        String line = scanner.nextLine().trim();
+        try {
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+}
+
+// Message Java //
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.mycompany.prog5121part1;
+
+import java.util.Random;
+import java.util.regex.Pattern;
+import java.util.ArrayList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.io.FileWriter;
+import java.io.IOException;
+
+/**
+ *
+ * @author growwithbella
+ */
+public class Message {
+
+    private String messageID;
+    private int messageNumber;
+    private String recipient;
+    private String messageText;
+
+    // Normal use: ID is generated automatically
+    public Message(int messageNumber, String recipient, String messageText) {
+        this.messageID = generateMessageID();
+        this.messageNumber = messageNumber;
+        this.recipient = recipient;
+        this.messageText = messageText;
+    }
+
+    //For testing: supply a fixed ID
+    public Message(String messageID, int messageNumber, String recipient, String messageText) {
+        this.messageID = messageID;
+        this.messageNumber = messageNumber;
+        this.recipient = recipient;
+        this.messageText = messageText;
+    }
+
+    private String generateMessageID() {
+        Random random = new Random();
+        StringBuilder id = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            id.append(random.nextInt(10));
+        }
+        return id.toString();
+    }
+
+    public boolean checkMessageID() {
+        return messageID != null && messageID.length() <= 10;
+    }
+
+    public String getMessageID() {
+        return messageID;
+    }
+    
+    // Regex for a South African number: +27, then 9 digits (first digit 6, 7 or 8)
+    private static final Pattern CELL_PATTERN = Pattern.compile("^\\+27[6-8][0-9]{8}$");
+
+    public boolean isValidRecipient() {
+        return recipient != null && CELL_PATTERN.matcher(recipient).matches();
+    }
+    
+    public String checkRecipientCell() {
+        if (isValidRecipient()) {
+            return "Cell phone number successfully captured."; 
+       }
+        else {
+            return "Cell phone number is incorrectly formatted or does not contain an international code. Please correct the number and try again.";
+        }
+    }
+    
+    public String getRecipient() {
+        return recipient;
+    }
+    
+    public String createMessageHash() {
+        if (messageID == null || messageID.length() < 2
+                || messageText == null || messageText.trim().isEmpty()) {
+            return "";
+        }
+        
+        String firstTwo = messageID.substring(0, 2);
+        
+        String[] words = messageText.trim().split("\\s+");
+        String firstWord = cleanWord(words[0]);
+        String lastWord = cleanWord(words[words.length - 1]);
+        
+        String hash = firstTwo + ":" + messageNumber + ":" + firstWord + lastWord;
+        return hash.toUpperCase();
+    }
+    
+    // Removes punctuation such as the "?" in "tonight?" or the "," in "Mike"
+    private String cleanWord(String word) {
+        return word.replaceAll("[^A-Za-z0-9]", "");
+    }
+    
+    // Holds every message sent while the program is running
+    private static final ArrayList<Message> sentMessages = new ArrayList<>();
+    
+    public String checkMessageLength() {
+        int length = (messageText == null) ? 0 : messageText.length();
+        if (length <= 250) {
+            return "Message ready to send.";
+        }
+        return "Message exceeds 250 characters by " + (length - 250) + "; please reduce the size.";
+    }
+    
+    public String reportMessageID() {
+        return "Message ID generated: " + messageID;
+    }
+    
+    public boolean isMessageLengthValid() {
+        return messageText != null && messageText.length() <= 250;
+    }
+
+    public String getMessageDetails() {
+        return "Message ID: " + messageID + "\n"
+             + "Message Hash: " + createMessageHash() + "\n"
+             + "Recipient: " + recipient + "\n"
+             + "Message: " + messageText + "\n";
+    }
+    
+    //Messages the user chose to store for later
+    private static final ArrayList<Message> storedMessages = new ArrayList<>();
+    private static final String JSON_FILE = "messages.json";
+        
+        public boolean storeMessage() {
+            storedMessages.add(this);
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            
+            try (FileWriter writer = new FileWriter(JSON_FILE)) {
+                gson.toJson(storedMessages, writer);
+                return true;
+            } catch (IOException e) {
+                storedMessages.remove(this);
+                return false;
+            }
+        }
+        
+    public String SentMessage(int choice) {
+         
+        switch (choice) {
+            case 1:
+                sentMessages.add(this);
+                return "Message successfully sent.";
+            case 2:
+                return "Press 0 to delete the message.";
+            case 3:
+                if (storeMessage()) {
+                    return "Message successfully stored.";
+                }
+                return "Message could not be stored";
+            default:
+                return "Invalid option. Please choose 1 (Send), 2 (Disregard) or 3 (Store).";
+        }
+    }
+    
+    public static String printMessages() {
+        StringBuilder sb = new StringBuilder ();
+        for (Message m : sentMessages) {
+            sb.append("Message ID: ").append(m.messageID).append("\n");
+            sb.append("Message Hash: ").append(m.createMessageHash()).append("\n");
+            sb.append("Recipient: ").append(m.recipient).append("\n");
+            sb.append("Message: ").append(m.messageText).append("\n\n");
+        }
+        return sb.toString();
+    }
+    
+    public static int returnTotalMessages() {
+        return sentMessages.size();
+    }
+    
+    // Lets unit tests start from a clean slate
+    public static void clearSentMessages() {
+        sentMessages.clear();
+    }
+}
+
+// Test Cases //
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package TestClasses;
+
+import com.mycompany.prog5121part1.Message;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ *
+ * @author growwithbella
+ */
+public class TestMessage {
+
+    // Test Case 1 and 2 data from the brief
+    private static final String RECIPIENT_1 = "+27718693002";
+    private static final String TEXT_1 = "Hi Mike, can you join us for dinner tonight?";
+    private static final String RECIPIENT_2 = "08575975889";
+    private static final String TEXT_2 = "Hi Keegan, did you receive the payment?";
+
+    @BeforeEach
+    public void clearMessages() {
+        Message.clearSentMessages();
+    }
+
+    @Test
+    public void testMessageLengthSuccess() {
+        Message m = new Message("0012345678", 0, RECIPIENT_1, TEXT_1);
+        assertEquals("Message ready to send.", m.checkMessageLength());
+    }
+
+    @Test
+    public void testMessageLengthFailure() {
+        Message m = new Message("0012345678", 0, RECIPIENT_1, "a".repeat(260));
+        assertEquals("Message exceeds 250 characters by 10; please reduce the size.",
+                m.checkMessageLength());
+    }
+
+    @Test
+    public void testRecipientSuccess() {
+        Message m = new Message("0012345678", 0, RECIPIENT_1, TEXT_1);
+        assertEquals("Cell phone number successfully captured.", m.checkRecipientCell());
+    }
+
+    @Test
+    public void testRecipientFailure() {
+        Message m = new Message("0087654321", 1, RECIPIENT_2, TEXT_2);
+        assertEquals("Cell phone number is incorrectly formatted or does not contain an international code. Please correct the number and try again.",
+                m.checkRecipientCell());
+    }
+
+    @Test
+    public void testMessageHashCase1() {
+        Message m = new Message("0012345678", 0, RECIPIENT_1, TEXT_1);
+        assertEquals("00:0:HITONIGHT", m.createMessageHash());
+    }
+
+    @Test
+    public void testAllMessageHashesInLoop() {
+        String[] ids = {"0012345678", "0087654321"};
+        int[] numbers = {0, 1};
+        String[] recipients = {RECIPIENT_1, RECIPIENT_2};
+        String[] texts = {TEXT_1, TEXT_2};
+        String[] expected = {"00:0:HITONIGHT", "00:1:HIPAYMENT"};
+
+        for (int i = 0; i < ids.length; i++) {
+            Message m = new Message(ids[i], numbers[i], recipients[i], texts[i]);
+            assertEquals(expected[i], m.createMessageHash());
+        }
+    }
+
+    @Test
+    public void testMessageIDCreated() {
+        Message m = new Message(0, RECIPIENT_1, TEXT_1);
+        assertEquals("Message ID generated: " + m.getMessageID(), m.reportMessageID());
+        assertTrue(m.checkMessageID());
+    }
+
+    @Test
+    public void testMessageSentOptions() {
+        Message m = new Message("0012345678", 0, RECIPIENT_1, TEXT_1);
+        assertEquals("Message successfully sent.", m.SentMessage(1));
+        assertEquals("Press 0 to delete the message.", m.SentMessage(2));
+        assertEquals("Message successfully stored.", m.SentMessage(3));
+    }
+
+    @Test
+    public void testTotalMessagesCounted() {
+        new Message("0012345678", 0, RECIPIENT_1, TEXT_1).SentMessage(1);
+        new Message("0087654321", 1, RECIPIENT_2, TEXT_2).SentMessage(2);
+        assertEquals(1, Message.returnTotalMessages());
+    }
+}
