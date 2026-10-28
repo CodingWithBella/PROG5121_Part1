@@ -1,0 +1,138 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package TestClasses;
+
+import com.mycompany.prog5121part1.Message;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ *
+ * @author growwithbella
+ */
+public class TestStoredMessages {
+
+    @TempDir
+    Path tempDir;
+
+    private Message m1, m2, m3, m4, m5;
+
+    // Developer entry: the brief's five test messages go in directly, with no user input
+    @BeforeEach
+    public void loadTestData() {
+        Message.setJsonFile(tempDir.resolve("test-messages.json").toString());
+        Message.clearAll();
+
+        m1 = new Message("0012345678", 0, "+27834557896", "Did you get the cake?");
+        m2 = new Message("0023456789", 1, "+27838884567", "Where are you? You are late! I have asked you to be on time.");
+        m3 = new Message("0034567890", 2, "+27834484567", "Yohoooo, I am at your gate.");
+        m4 = new Message("0045678901", 3, "0838884567", "It is dinner time!");
+        m5 = new Message("0056789012", 4, "+27838884567", "Ok, I am leaving without you.");
+
+        for (Message m : new Message[]{m1, m2, m3, m4, m5}) {
+            m.setSender("Developer");
+        }
+
+        m1.SentMessage(1);   // Sent
+        m2.SentMessage(3);   // Stored
+        m3.SentMessage(2);   // Disregard
+        m4.SentMessage(1);   // Sent
+        m5.SentMessage(3);   // Stored
+    }
+
+    @AfterEach
+    public void restoreFile() {
+        Message.setJsonFile("messages.json");
+    }
+
+    private static List<String> textsOf(List<Message> messages) {
+        List<String> texts = new ArrayList<>();
+        for (Message m : messages) {
+            texts.add(m.getMessageText());
+        }
+        return texts;
+    }
+
+    @Test
+    public void testSentMessagesArrayCorrectlyPopulated() {
+        assertEquals(List.of("Did you get the cake?", "It is dinner time!"),
+                textsOf(Message.getSentMessages()));
+    }
+
+    @Test
+    public void testDisregardedMessagesArray() {
+        assertEquals(List.of("Yohoooo, I am at your gate."),
+                textsOf(Message.getDisregardedMessages()));
+    }
+
+    @Test
+    public void testMessageIDArray() {
+        assertEquals(List.of("0012345678", "0023456789", "0034567890", "0045678901", "0056789012"),
+                Message.getMessageIDs());
+    }
+
+    @Test
+    public void testMessageHashArray() {
+        assertEquals(List.of("00:0:DIDCAKE", "00:1:WHERETIME", "00:2:YOHOOOOGATE",
+                "00:3:ITTIME", "00:4:OKYOU"), Message.getMessageHashes());
+    }
+
+    @Test
+    public void testLongestMessage() {
+        assertEquals("Where are you? You are late! I have asked you to be on time.",
+                Message.longestStoredMessage());
+    }
+
+    @Test
+    public void testSearchByMessageID() {
+        assertEquals("Recipient: 0838884567 | Message: It is dinner time!",
+                Message.searchByMessageID(m4.getMessageID()));
+    }
+
+    @Test
+    public void testSearchByRecipient() {
+        assertEquals(List.of("Where are you? You are late! I have asked you to be on time.",
+                "Ok, I am leaving without you."),
+                Message.searchByRecipient("+27838884567"));
+    }
+
+    @Test
+    public void testDeleteByHash() {
+        assertEquals("Message: \"Where are you? You are late! I have asked you to be on time\" successfully deleted.",
+                Message.deleteByHash(m2.createMessageHash()));
+        assertEquals(1, Message.getStoredMessages().size());
+    }
+
+    @Test
+    public void testReport() {
+        String expected =
+                "Message ID: 0012345678\n"
+              + "Message Hash: 00:0:DIDCAKE\n"
+              + "Sender: Developer\n"
+              + "Recipient: +27834557896\n"
+              + "Message: Did you get the cake?\n\n"
+              + "Message ID: 0045678901\n"
+              + "Message Hash: 00:3:ITTIME\n"
+              + "Sender: Developer\n"
+              + "Recipient: 0838884567\n"
+              + "Message: It is dinner time!\n\n";
+        assertEquals(expected, Message.reportSentMessages());
+    }
+
+    @Test
+    public void testStoredMessagesReadBackFromJson() {
+        Message.clearAll();              // empties memory; the temp JSON file still holds messages 2 and 5
+        Message.loadStoredMessages();
+        assertEquals(List.of("Where are you? You are late! I have asked you to be on time.",
+                "Ok, I am leaving without you."),
+                textsOf(Message.getStoredMessages()));
+    }
+}
